@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <title>欢迎你，请先登陆！</title>
+ <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+ <link rel="stylesheet" href="css/yz.css">
+</head>
+<body>
+  <div class="box">
+    <div class="noExtension hide" id="noExtension">
+        NOTE: Please install <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>  to use SUPER DICTIONARY
+    </div>
+    <div id="container" style="width: 400px" align="center">
+      <div id="header" style="background-color: aquamarine">
+      <h2 align="center">注 册 星 云 社 区</h2>
+      </div>
+<br><br>
+
+ <div id="content">
+  <p align="center">账号:
+   <input id="uname" type="text" name="user" placeholder="账号首字符为字母">
+  </p>
+  <p align="center">密码:
+   <input id="upass" type="password" name="password" placeholder="请输入密码">
+  <p align="center">邮箱:
+   <input id="uemail" type="text" name="email" placeholder="请输入email">
+  </p>
+  <button id="push" class="btn btn-primary" >注册</button>
+ </div>
+<p>@请注意：为防止刷号，注册需要耗费少量nas
+</p>
+</div>
+<script src=lib/jquery-3.3.1.min.js></script>
+<script src=lib/nebPay.js></script>
+<script src=lib/bootstrap-4.0.0-dist/js/bootstrap.min.js></script>
+<script src=lib/nebulas.js></script>
+<script>
+    "use strict";
+
+    var dappAddress = "n1wbQu5EsVxtMdGP7KLK5yfUCaXH4A5nCS8";
+
+    var nebulas = require("nebulas"),
+        Account = nebulas.Account,
+        neb = new nebulas.Neb();
+    neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+
+
+
+    var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
+    var nebPay = new NebPay();
+    var serialNumber
+
+    $("#push").click(function() {
+        if ($("#uname").val() === "" || $("#upass").val() === "" || $("#uemail").val() === ""){
+            alert("数据为空");
+            return;
+        }
+        if ($("#uname").val().length > 64 || $("#upass").val().length > 64 || $("#uemail").val().length > 64){
+            alert("账户 / 密码 / 邮箱 不能超过64位");
+            return;
+        }
+        var expr =  /^([0-9]|[a-z])+@([0-9]|[a-z])+(\.[c][o][m])$/i;
+        if(!expr.test($("#uemail").val()))
+        {
+           alert("错误的邮箱名");
+           return;
+        }
+        var to = dappAddress;
+        var value = "0";
+        var callFunction = "save"
+        var callArgs = "[\"" + $("#uname").val() + "\",\"" + $("#upass").val() +"\",\"" + $("#uemail").val() + "\"]"
+
+        serialNumber = nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+            listener: cbPush        //设置listener, 处理交易返回信息
+        });
+
+        intervalQuery = setInterval(function () {
+            funcIntervalQuery();
+        }, 5000);
+    });
+    var intervalQuery
+
+    function funcIntervalQuery() {
+        nebPay.queryPayInfo(serialNumber)   //search transaction result from server (result upload to server by app)
+            .then(function (resp) {
+                alert(resp);
+                var respObject = JSON.parse(resp)
+                if(respObject.code === 0){
+                    clearInterval(intervalQuery)
+                    alert("注册成功！10秒后进入登录界面");
+                    setTimeout("javascript:location.href='login.html'", 10000);
+                }else {
+                    clearInterval(intervalQuery)
+                    alert("注册失败！");
+                }
+            })
+            .catch(function (err) {
+                  alert(err);
+            });
+    }
+
+    function cbPush(resp) {
+        console.log("response of push: " + JSON.stringify(resp))
+        //alert(JSON.stringify(resp));
+        alert(resp);
+
+    }
+</script>
+</body>
+</html>
